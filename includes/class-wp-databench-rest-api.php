@@ -4,7 +4,6 @@
  *
  * @package WP_DataBench
  */
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -18,7 +17,8 @@ class WP_DataBench_REST_API {
 	 * Registers all wp-databench/v1 REST routes on the rest_api_init hook.
 	 */
 	public static function register_routes() {
-		$perm = array( 'WP_DataBench_Access_Guard', 'permission_callback' );
+		$perm  = array( 'WP_DataBench_Access_Guard', 'permission_callback' );
+		$write = array( 'WP_DataBench_Access_Guard', 'write_permission_callback' );
 
 		register_rest_route(
 			self::NS,
@@ -52,7 +52,7 @@ class WP_DataBench_REST_API {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( 'WP_DataBench_DB_Explorer', 'insert_row' ),
-					'permission_callback' => $perm,
+					'permission_callback' => $write,
 				),
 			)
 		);
@@ -79,13 +79,23 @@ class WP_DataBench_REST_API {
 				array(
 					'methods'             => 'PUT',
 					'callback'            => array( 'WP_DataBench_DB_Explorer', 'update_row' ),
-					'permission_callback' => $perm,
+					'permission_callback' => $write,
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( 'WP_DataBench_DB_Explorer', 'delete_row' ),
-					'permission_callback' => $perm,
+					'permission_callback' => $write,
 				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/unlock',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( 'WP_DataBench_Access_Guard', 'unlock' ),
+				'permission_callback' => $perm,
 			)
 		);
 	}

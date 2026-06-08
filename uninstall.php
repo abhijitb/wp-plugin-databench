@@ -6,4 +6,8 @@
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
-// No options stored in Phase 1.
+
+delete_option( 'wp_databench_enabled' );
+delete_option( 'wp_databench_read_only' );
+delete_option( 'wp_databench_ip_allowlist' );
+delete_option( 'wp_databench_unlock_password' );

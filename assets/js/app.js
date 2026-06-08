@@ -7,7 +7,7 @@
  * @file
  * @package wp-databench
  */
-
+/* global wpDataBench */
 (function () {
 	'use strict';
 
@@ -23,12 +23,15 @@
 		orderBy:       '',
 		order:         'ASC',
 		schema:        null,  // { columns, primary_key }
+		writeToken:    null,  // set after successful unlock
+		currentRows:   null,  // last loaded rows, used for browse CSV export
 	};
 
 	// ── API helper ─────────────────────────────────────────────────────────────
 
 	/**
-	 * Wrapper around fetch() that prepends the REST base URL and injects the nonce header.
+	 * Wrapper around fetch() that prepends the REST base URL and injects auth headers.
+	 * Automatically includes the write token when one is held in state.
 	 *
 	 * @param {string} path    Endpoint path relative to the REST namespace root.
 	 * @param {Object} options Fetch init options merged with the defaults.
@@ -36,22 +39,25 @@
 	 */
 	function apiFetch(path, options) {
 		options = options || {};
-		return fetch(API + path, Object.assign(
+		var headers = Object.assign(
 			{
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce':   NONCE,
-				},
+				'Content-Type': 'application/json',
+				'X-WP-Nonce':   NONCE,
 			},
-			options
-		)).then(function (res) {
-			return res.json().then(function (body) {
-				if (!res.ok) {
-					throw new Error(body.message || 'Request failed (' + res.status + ')');
-				}
-				return body;
+			options.headers || {}
+		);
+		if (state.writeToken) {
+			headers['X-DataBench-Write-Token'] = state.writeToken;
+		}
+		return fetch(API + path, Object.assign({}, options, { headers: headers }))
+			.then(function (res) {
+				return res.json().then(function (body) {
+					if (!res.ok) {
+						throw new Error(body.message || 'Request failed (' + res.status + ')');
+					}
+					return body;
+				});
 			});
-		});
 	}
 
 	// ── HTML escape ────────────────────────────────────────────────────────────
@@ -98,10 +104,23 @@
 		app.style.height = (window.innerHeight - top - 20) + 'px';
 	}
 
+	// ── Write access helpers ───────────────────────────────────────────────────
+
+	/**
+	 * Returns true if write operations are currently permitted in the UI.
+	 * False when in read-only mode or when a write password is required but not yet unlocked.
+	 *
+	 * @return {boolean}
+	 */
+	function canWrite() {
+		return !wpDataBench.readOnly && (!wpDataBench.writeLocked || state.writeToken !== null);
+	}
+
 	// ── Init ───────────────────────────────────────────────────────────────────
 
 	/**
 	 * Bootstraps the app — sets height, loads tables, and wires global event listeners.
+	 * Also injects the read-only badge or write-lock button into the header as needed.
 	 */
 	function init() {
 		setAppHeight();
@@ -117,6 +136,22 @@
 
 		document.getElementById('databench-sql-btn')
 			.addEventListener('click', openSQLRunner);
+
+		var headerMeta = document.querySelector('.databench-header-meta');
+
+		if (wpDataBench.readOnly) {
+			var badge = document.createElement('span');
+			badge.className = 'databench-readonly-badge';
+			badge.textContent = 'Read Only';
+			headerMeta.insertBefore(badge, headerMeta.firstChild);
+		} else if (wpDataBench.writeLocked) {
+			var lockBtn = document.createElement('button');
+			lockBtn.id = 'databench-lock-btn';
+			lockBtn.className = 'databench-lock-btn';
+			lockBtn.textContent = '🔒 Unlock Writes';
+			lockBtn.addEventListener('click', openUnlockModal);
+			headerMeta.insertBefore(lockBtn, document.getElementById('databench-sql-btn'));
+		}
 	}
 
 	// ── Sidebar ────────────────────────────────────────────────────────────────
@@ -240,10 +275,14 @@
 
 	/**
 	 * Renders the data grid, toolbar, search input, and pagination into the main panel.
+	 * Edit/delete/new-row controls are only shown when canWrite() is true.
+	 * Saves current rows to state for the CSV export button.
 	 *
 	 * @param {{rows: Array, total: number, page: number, per_page: number}} data
 	 */
 	function renderGrid(data) {
+		state.currentRows = data.rows;
+
 		var rows       = data.rows;
 		var total      = data.total;
 		var per_page   = data.per_page;
@@ -251,6 +290,7 @@
 		var cols       = state.schema.columns;
 		var pk         = state.schema.primary_key;
 		var hasPK      = pk !== null;
+		var writeable  = hasPK && canWrite();
 		var totalPages = Math.max(1, Math.ceil(total / per_page));
 
 		var headCols = cols.map(function (c) {
@@ -258,20 +298,20 @@
 			var cls    = sorted ? ('sorted ' + state.order.toLowerCase()) : '';
 			return '<th data-col="' + esc(c.name) + '" class="' + cls + '">' + esc(c.name) + '</th>';
 		}).join('');
-		if (hasPK) headCols += '<th class="actions-col">Actions</th>';
+		if (writeable) headCols += '<th class="actions-col">Actions</th>';
 
 		var bodyRows = rows.length ? rows.map(function (row) {
 			var cells = cols.map(function (c) {
 				return '<td title="' + esc(row[c.name]) + '">' + esc(row[c.name]) + '</td>';
 			}).join('');
-			if (hasPK) {
+			if (writeable) {
 				cells += '<td class="actions-col">' +
 					'<button class="btn-edit" data-pk="' + esc(row[pk]) + '">Edit</button>' +
 					'<button class="btn-delete" data-pk="' + esc(row[pk]) + '">Del</button>' +
 					'</td>';
 			}
 			return '<tr>' + cells + '</tr>';
-		}).join('') : '<tr><td colspan="' + (cols.length + (hasPK ? 1 : 0)) + '" class="no-rows">No rows found.</td></tr>';
+		}).join('') : '<tr><td colspan="' + (cols.length + (writeable ? 1 : 0)) + '" class="no-rows">No rows found.</td></tr>';
 
 		var html =
 			'<div class="databench-toolbar">' +
@@ -279,7 +319,8 @@
 			renderTabs('browse') +
 			'<span class="toolbar-spacer"></span>' +
 			'<input id="databench-search" type="text" placeholder="Search… (Enter)" value="' + esc(state.currentSearch) + '">' +
-			(hasPK ? '<button id="databench-new-row">+ New Row</button>' : '') +
+			(rows.length ? '<button id="databench-export-csv" class="databench-browse-export-btn">⬇ CSV</button>' : '') +
+			(writeable ? '<button id="databench-new-row">+ New Row</button>' : '') +
 			'</div>' +
 			'<div class="databench-grid-wrap">' +
 			'<table class="databench-grid">' +
@@ -305,7 +346,14 @@
 			}
 		});
 
-		if (hasPK) {
+		var exportBtn = document.getElementById('databench-export-csv');
+		if (exportBtn) {
+			exportBtn.addEventListener('click', function () {
+				exportCSV(cols.map(function (c) { return c.name; }), state.currentRows);
+			});
+		}
+
+		if (writeable) {
 			document.getElementById('databench-new-row').addEventListener('click', function () {
 				openModal(null);
 			});
@@ -531,6 +579,75 @@
 		if (btn) btn.classList.toggle('active', active);
 	}
 
+	// ── Unlock modal ───────────────────────────────────────────────────────────
+
+	/**
+	 * Opens the write-unlock password modal.
+	 * On success stores the server-issued token in state and refreshes the current view.
+	 */
+	function openUnlockModal() {
+		var overlay = document.createElement('div');
+		overlay.className = 'databench-overlay';
+		overlay.innerHTML =
+			'<div class="databench-modal" style="max-width:380px">' +
+			'<div class="modal-header">' +
+			'<h3>Unlock Write Operations</h3>' +
+			'<button class="modal-close" aria-label="Close">✕</button>' +
+			'</div>' +
+			'<form class="modal-form">' +
+			'<div class="form-row">' +
+			'<label>Password</label>' +
+			'<input type="password" id="databench-unlock-pw" class="regular-text" autocomplete="current-password">' +
+			'</div>' +
+			'<div class="form-actions">' +
+			'<button type="button" class="btn-cancel">Cancel</button>' +
+			'<button type="submit">Unlock</button>' +
+			'</div></form></div>';
+
+		document.body.appendChild(overlay);
+		setTimeout(function () {
+			var pwField = overlay.querySelector('#databench-unlock-pw');
+			if (pwField) pwField.focus();
+		}, 50);
+
+		overlay.querySelector('.modal-close').addEventListener('click', function () { overlay.remove(); });
+		overlay.querySelector('.btn-cancel').addEventListener('click', function () { overlay.remove(); });
+		overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+		overlay.querySelector('form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			var pw = overlay.querySelector('#databench-unlock-pw').value;
+			if (!pw) return;
+
+			var submitBtn = overlay.querySelector('button[type="submit"]');
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Unlocking…';
+
+			apiFetch('unlock', { method: 'POST', body: JSON.stringify({ password: pw }) })
+				.then(function (data) {
+					state.writeToken = data.token;
+					overlay.remove();
+
+					var lockBtn = document.getElementById('databench-lock-btn');
+					if (lockBtn) {
+						lockBtn.textContent = '🔓 Writes Unlocked';
+						lockBtn.classList.add('unlocked');
+						lockBtn.onclick = null;
+					}
+
+					if (state.currentTable && state.currentView === 'browse') {
+						loadRows();
+					}
+					toast('Write operations unlocked for this session.', 'success');
+				})
+				.catch(function (err) {
+					submitBtn.disabled = false;
+					submitBtn.textContent = 'Unlock';
+					toast(err.message);
+				});
+		});
+	}
+
 	// ── Modal ──────────────────────────────────────────────────────────────────
 
 	/**
@@ -560,17 +677,13 @@
 		var pk   = state.schema.primary_key;
 
 		var fields = cols.map(function (col) {
-			var val         = row ? (null !== row[col.name] ? row[col.name] : '') : '';
+			var val         = row ? esc(row[col.name]) : '';
 			var readonly    = (!isNew && col.name === pk) ? ' readonly' : '';
 			var placeholder = col.null ? ' placeholder="NULL"' : '';
-			var isLongText  = /text|blob/i.test(col.type);
-			var input       = isLongText
-				? '<textarea name="' + esc(col.name) + '" rows="6"' + readonly + placeholder + '>' + esc(val) + '</textarea>'
-				: '<input type="text" name="' + esc(col.name) + '" value="' + esc(val) + '"' + readonly + placeholder + '>';
 			return '<div class="form-row">' +
 				'<label>' + esc(col.name) +
 				'<span class="col-type">' + esc(col.type) + '</span></label>' +
-				input +
+				'<input type="text" name="' + esc(col.name) + '" value="' + val + '"' + readonly + placeholder + '>' +
 				'</div>';
 		}).join('');
 

@@ -109,7 +109,7 @@ wp-plugin-databench/
 
 ---
 
-## Phase 3 — CI/CD (planned)
+## Phase 3 — CI/CD ✅
 
 Three GitHub Actions workflows living in `.github/workflows/`.
 
@@ -143,15 +143,36 @@ Both jobs are independent and run in parallel.
 
 ---
 
-## Phase 4 — Settings & Access Controls (planned)
+## Phase 4 — Settings & Access Controls ✅
 
-- Settings page (Settings API):
-  - `wp_databench_enabled` — kill switch
-  - `wp_databench_read_only` — disable all write operations globally
-  - `wp_databench_ip_allowlist` — comma-separated IP allowlist
-  - `wp_databench_unlock_password` — extra password gate for write operations
-- Read-only mode: hides New Row / Edit / Delete buttons and blocks write REST endpoints
-- IP allowlist enforced on admin page render and REST permission callback
-- Multi-site awareness (`$wpdb->tables('all')`)
-- CSV export on the Browse grid (not just SQL Runner)
-- SQL Runner: allow `WITH ... SELECT` (CTEs), export results to CSV
+**Server-side (`includes/`)**
+
+- `class-wp-databench-settings.php` — Settings API integration
+  - `wp_databench_enabled` — kill switch; admin page shows disabled notice when off
+  - `wp_databench_read_only` — blocks all write REST endpoints and hides UI write controls
+  - `wp_databench_ip_allowlist` — newline-separated IPs checked on every REST request
+  - `wp_databench_unlock_password` — write token gate; stored as `wp_hash_password` hash
+  - Sentinel value `**clear**` used by the JS "Remove password" checkbox to trigger hash deletion
+- `class-wp-databench-access-guard.php` — rewritten with three concerns:
+  - `permission_callback()` — checks enabled flag, IP allowlist, and `manage_options`
+  - `write_permission_callback()` — extends above; also checks read-only flag and write token header
+  - `unlock()` — POST handler; verifies password, issues a 32-char WP-generated token via transient (1 hr TTL, user-scoped)
+- `class-wp-databench-rest-api.php` — write routes use `write_permission_callback`; `/unlock` route added
+- `class-wp-databench-admin-page.php` — Settings submenu registered; `readOnly` and `writeLocked` passed to JS via `wp_localize_script`
+- `uninstall.php` — deletes all 4 options on plugin removal
+
+**Front-end (`assets/`)**
+
+- `app.js`
+  - `state.writeToken` — holds session write token after unlock
+  - `state.currentRows` — holds last loaded rows for browse CSV export
+  - `apiFetch()` — automatically injects `X-DataBench-Write-Token` header when token is held
+  - `canWrite()` — returns true only when not read-only and either unlocked or no password required
+  - `init()` — injects read-only badge (`.databench-readonly-badge`) or lock button (`.databench-lock-btn`) into header based on server flags
+  - `openUnlockModal()` — password modal → `POST /unlock` → stores token → refreshes grid; lock button updates to unlocked state
+  - `renderGrid()` — respects `canWrite()` for Edit/Delete/New Row visibility; adds CSV export button to toolbar
+- `style.css`
+  - `.databench-readonly-badge` — orange pill badge in header
+  - `.databench-lock-btn` / `.databench-lock-btn.unlocked` — amber/green lock button states
+  - `.databench-browse-export-btn` — CSV export button on the browse grid toolbar
+  - `input[type="password"]` styles for the unlock modal
