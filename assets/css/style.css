@@ -1,0 +1,767 @@
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.databench-app {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 12px 0 0;
+    background: #f0f0f1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.databench-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+    min-height: 52px;
+    background: #1e1e2e;
+    border-bottom: 1px solid #313244;
+    border-radius: 4px 4px 0 0;
+}
+
+.databench-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.databench-header-icon {
+    font-size: 22px;
+    color: #cba6f7;
+    line-height: 1;
+}
+
+.databench-header-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #cdd6f4;
+    letter-spacing: 0.3px;
+}
+
+.databench-header-tagline {
+    font-size: 11px;
+    color: #6c7086;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 1px;
+}
+
+.databench-header-meta {
+    font-size: 12px;
+    color: #6c7086;
+}
+
+/* ── Body (sidebar + main) ─────────────────────────────────────────────────── */
+.databench-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.databench-sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.databench-sidebar-header {
+    padding: 14px 14px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #313244;
+    flex-shrink: 0;
+}
+
+.databench-sidebar-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c7086;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.databench-sidebar-header button {
+    background: none;
+    border: none;
+    color: #6c7086;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.databench-sidebar-header button:hover {
+    color: #cdd6f4;
+    background: #313244;
+}
+
+.databench-table-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.databench-table-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    cursor: pointer;
+    color: #bac2de;
+    transition: background 0.1s;
+}
+
+.databench-table-list li:hover {
+    background: #313244;
+    color: #cdd6f4;
+}
+
+.databench-table-list li.active {
+    background: #45475a;
+    color: #cba6f7;
+    font-weight: 600;
+}
+
+.databench-table-list .table-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    margin-right: 6px;
+}
+
+.databench-table-list .table-count {
+    font-size: 11px;
+    color: #6c7086;
+    background: #313244;
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.databench-table-list li.active .table-count {
+    background: #585b70;
+    color: #cba6f7;
+}
+
+.databench-loading {
+    padding: 12px 14px;
+    color: #6c7086;
+    font-style: italic;
+    cursor: default !important;
+}
+
+/* ── Main panel ────────────────────────────────────────────────────────────── */
+.databench-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    min-width: 0;
+}
+
+.databench-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #8c8f94;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────────── */
+.databench-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+    flex-shrink: 0;
+}
+
+.databench-table-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d2327;
+    white-space: nowrap;
+}
+
+.databench-toolbar input[type="text"] {
+    border: 1px solid #c3c4c7;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    width: 220px;
+}
+
+.databench-toolbar input[type="text"]:focus {
+    outline: none;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.toolbar-spacer { flex: 1; }
+
+#databench-new-row {
+    padding: 5px 12px;
+    background: #2271b1;
+    color: #fff;
+    border: 1px solid #2271b1;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#databench-new-row:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+/* ── Data grid ─────────────────────────────────────────────────────────────── */
+.databench-grid-wrap {
+    flex: 1;
+    overflow: auto;
+}
+
+.databench-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.databench-grid thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f6f7f7;
+}
+
+.databench-grid th {
+    padding: 8px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 2px solid #dcdcde;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.databench-grid th:hover {
+    background: #eef0f1;
+}
+
+.databench-grid th.sorted { color: #2271b1; }
+.databench-grid th.sorted.asc::after  { content: " ↑"; }
+.databench-grid th.sorted.desc::after { content: " ↓"; }
+
+.databench-grid th.actions-col,
+.databench-grid td.actions-col {
+    width: 110px;
+    text-align: center;
+    cursor: default;
+}
+
+.databench-grid td {
+    padding: 7px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #1d2327;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.databench-grid tr:hover td { background: #f6f9ff; }
+
+.databench-grid th:first-child,
+.databench-grid td:first-child { padding-left: 20px; }
+
+.databench-grid th:last-child,
+.databench-grid td:last-child { padding-right: 20px; }
+
+.databench-grid .no-rows {
+    text-align: center;
+    color: #8c8f94;
+    padding: 24px;
+    cursor: default;
+}
+
+/* ── Row action buttons ─────────────────────────────────────────────────────── */
+.btn-edit,
+.btn-delete {
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.btn-edit {
+    background: #f0f6fc;
+    color: #2271b1;
+    border-color: #c3d4e3;
+    margin-right: 4px;
+}
+
+.btn-edit:hover { background: #dce8f3; }
+
+.btn-delete {
+    background: #fdf2f2;
+    color: #d63638;
+    border-color: #f0b9b9;
+}
+
+.btn-delete:hover { background: #f9d0d0; }
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.databench-pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-top: 1px solid #e0e0e0;
+    background: #fafafa;
+    font-size: 12px;
+    color: #50575e;
+    flex-shrink: 0;
+}
+
+.databench-pagination button {
+    padding: 4px 10px;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.databench-pagination button:hover:not(:disabled) { background: #f0f0f1; }
+
+.databench-pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.databench-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+}
+
+.databench-modal {
+    background: #fff;
+    border-radius: 6px;
+    width: 480px;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #8c8f94;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.modal-close:hover { color: #1d2327; }
+
+.modal-form {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.form-row { margin-bottom: 12px; }
+
+.form-row label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #1d2327;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.form-row .col-type {
+    font-weight: 400;
+    color: #8c8f94;
+    text-transform: none;
+    margin-left: 4px;
+    font-size: 11px;
+    letter-spacing: 0;
+}
+
+.form-row input[type="text"] {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.form-row input[type="text"]:focus {
+    outline: none;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.form-row input[readonly] {
+    background: #f6f7f7;
+    color: #8c8f94;
+    cursor: not-allowed;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 16px;
+}
+
+.form-actions button[type="submit"] {
+    padding: 7px 16px;
+    background: #2271b1;
+    color: #fff;
+    border: 1px solid #2271b1;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form-actions button[type="submit"]:hover:not(:disabled) { background: #135e96; }
+.form-actions button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-cancel {
+    padding: 7px 16px;
+    background: #fff;
+    color: #1d2327;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-cancel:hover { background: #f0f0f1; }
+
+/* ── Toast notifications ───────────────────────────────────────────────────── */
+.databench-toast {
+    position: fixed;
+    top: 46px;
+    right: 20px;
+    z-index: 200000;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    animation: databench-fadein 0.15s ease;
+    max-width: 360px;
+}
+
+.databench-toast.error {
+    background: #fcf0f1;
+    border-left: 4px solid #d63638;
+    color: #d63638;
+}
+
+.databench-toast.success {
+    background: #edfaef;
+    border-left: 4px solid #00a32a;
+    color: #007017;
+}
+
+@keyframes databench-fadein {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Toolbar tabs ──────────────────────────────────────────────────────────── */
+.databench-tab-group {
+    display: flex;
+    gap: 2px;
+    background: #e8e8e8;
+    padding: 3px;
+    border-radius: 6px;
+}
+
+.databench-tab {
+    padding: 4px 14px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #50575e;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+}
+
+.databench-tab:hover  { background: #fff; color: #1d2327; }
+
+.databench-tab.active {
+    background: #fff;
+    color: #2271b1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ── SQL button in header ──────────────────────────────────────────────────── */
+.databench-sql-btn {
+    padding: 6px 14px;
+    background: #313244;
+    color: #cba6f7;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.12s;
+    margin-right: 12px;
+}
+
+.databench-sql-btn:hover  { background: #45475a; }
+
+.databench-sql-btn.active {
+    background: #cba6f7;
+    color: #1e1e2e;
+    border-color: #cba6f7;
+}
+
+/* ── Structure view ────────────────────────────────────────────────────────── */
+.databench-structure-wrap {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+}
+
+.databench-structure-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+}
+
+.databench-structure-table thead {
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+}
+
+.databench-structure-table th {
+    padding: 8px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #50575e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #dcdcde;
+    white-space: nowrap;
+}
+
+.databench-structure-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.databench-structure-table tr:hover td { background: #f6f9ff; }
+
+.databench-structure-table th:first-child,
+.databench-structure-table td:first-child { padding-left: 24px; }
+
+.col-name-cell {
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.col-type-cell {
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    color: #2271b1;
+    font-size: 12px;
+}
+
+.col-default-cell,
+.col-extra-cell { color: #50575e; font-size: 12px; }
+
+.null-yes { color: #8c8f94; }
+.null-no  { color: #1d2327; font-weight: 600; }
+
+.key-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.key-pri { background: #fef3c7; color: #92400e; }
+.key-uni { background: #dbeafe; color: #1e40af; }
+.key-mul { background: #f0fdf4; color: #166534; }
+
+/* ── SQL Runner ────────────────────────────────────────────────────────────── */
+.databench-sql-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sql-editor-area {
+    padding: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+    flex-shrink: 0;
+}
+
+.sql-textarea {
+    width: 100%;
+    height: 120px;
+    padding: 10px 14px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+    color: #1d2327;
+    background: #fff;
+    outline: none;
+}
+
+.sql-textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.sql-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sql-run-btn {
+    padding: 6px 16px;
+    background: #2271b1;
+    color: #fff;
+    border: 1px solid #2271b1;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sql-run-btn:hover:not(:disabled) { background: #135e96; }
+.sql-run-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.sql-hint {
+    font-size: 12px;
+    color: #8c8f94;
+    margin-left: auto;
+}
+
+.sql-results {
+    flex: 1;
+    overflow: auto;
+}
+
+.sql-result-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 20px;
+    font-size: 12px;
+    color: #50575e;
+    background: #f6f7f7;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+}
+
+.sql-export-btn {
+    padding: 3px 10px;
+    background: #fff;
+    color: #2271b1;
+    border: 1px solid #c3d4e3;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sql-export-btn:hover { background: #f0f6fc; }
+
+.sql-result-grid-wrap { overflow: auto; }
+
+.sql-empty,
+.sql-running,
+.sql-placeholder {
+    padding: 24px 20px;
+    color: #8c8f94;
+    font-size: 13px;
+    margin: 0;
+}
+
+.sql-error-msg {
+    margin: 16px 20px;
+    padding: 10px 16px;
+    background: #fcf0f1;
+    border-left: 4px solid #d63638;
+    color: #d63638;
+    font-size: 13px;
+    border-radius: 2px;
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+}
