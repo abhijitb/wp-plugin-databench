@@ -109,7 +109,41 @@ wp-plugin-databench/
 
 ---
 
-## Phase 3 — Settings & Access Controls (planned)
+## Phase 3 — CI/CD (planned)
+
+Three GitHub Actions workflows living in `.github/workflows/`.
+
+### `lint.yml` — triggered on push and pull_request to `main`
+
+**PHP lint** (`php-lint` job)
+- Runs on `ubuntu-latest`
+- Installs PHP 8.2 via `shivammathur/setup-php`
+- Installs Composer dev dependencies (`squizlabs/php_codesniffer` + `wp-coding-standards/wpcs`)
+- Registers WPCS with PHPCS: `vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs`
+- Runs: `vendor/bin/phpcs --standard=WordPress --extensions=php --ignore=vendor/ .`
+
+**JS lint** (`js-lint` job)
+- Runs on `ubuntu-latest`
+- Installs Node.js 20 via `actions/setup-node`
+- Installs ESLint: `npm install --save-dev eslint`
+- Config file: `.eslintrc.json` with `env: {browser: true, es5: true}`, `extends: eslint:recommended`, overrides for WP globals (`wpDataBench`, `wp`)
+- Runs: `npx eslint assets/js/`
+
+Both jobs are independent and run in parallel.
+
+### `release.yml` — triggered on `push` with tag pattern `v*.*.*`
+
+**`build-zip` job**
+- Checks out the repo
+- Creates a staging directory: `wp-plugin-databench/`
+- Copies all plugin files except dev artifacts: excludes `.git`, `.github`, `node_modules`, `vendor`, `*.lock`, `composer.json`, `package.json`, `.eslintrc.json`, `docs/`
+- Zips the staging directory: `zip -r wp-plugin-databench-{tag}.zip wp-plugin-databench/`
+- Creates a GitHub Release via `softprops/action-gh-release` with the zip attached
+- The release body is auto-populated from the tag annotation message
+
+---
+
+## Phase 4 — Settings & Access Controls (planned)
 
 - Settings page (Settings API):
   - `wp_databench_enabled` — kill switch

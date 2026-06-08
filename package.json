@@ -1,0 +1,10 @@
+{
+    "name": "wp-databench",
+    "private": true,
+    "scripts": {
+        "lint": "eslint assets/js/"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.0"
+    }
+}

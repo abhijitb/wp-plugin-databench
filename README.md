@@ -17,7 +17,12 @@ A WordPress admin plugin for browsing and editing your database — similar to [
 - **SQL Runner** — execute raw SELECT queries with row count, execution time, and CSV export
 - 1,000-row safety cap auto-applied when no `LIMIT` is present
 
-### Coming in Phase 3
+### Coming in Phase 3 — CI/CD
+- PHP lint via PHPCS + WordPress Coding Standards (runs on push/PR)
+- JS lint via ESLint (runs on push/PR)
+- Automated release zip built and attached to GitHub Release on `v*.*.*` tag
+
+### Coming in Phase 4 — Settings & Access Controls
 - Settings page: read-only mode, IP allowlist, extra unlock password, kill switch
 - CSV export on the data grid
 - Multi-site support

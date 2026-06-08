@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ruleset name="WP DataBench">
+    <description>PHPCS configuration for WP DataBench.</description>
+
+    <file>.</file>
+    <exclude-pattern>vendor/</exclude-pattern>
+    <exclude-pattern>node_modules/</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <rule ref="WordPress">
+        <!-- Plugin doesn't use i18n text domain enforcement yet -->
+        <exclude name="WordPress.WP.I18n"/>
+    </rule>
+</ruleset>
