@@ -39,6 +39,16 @@
 	 */
 	function apiFetch(path, options) {
 		options = options || {};
+
+		// Split any query string out of the path so we can append it correctly.
+		// When WordPress uses plain permalinks the base URL already contains '?'
+		// (?rest_route=...), so additional query params must join with '&' not '?'.
+		var qIdx      = path.indexOf('?');
+		var routePart = qIdx === -1 ? path : path.slice(0, qIdx);
+		var queryPart = qIdx === -1 ? ''   : path.slice(qIdx + 1);
+		var base      = API + routePart;
+		var url       = queryPart ? base + (base.indexOf('?') !== -1 ? '&' : '?') + queryPart : base;
+
 		var headers = Object.assign(
 			{
 				'Content-Type': 'application/json',
@@ -49,7 +59,7 @@
 		if (state.writeToken) {
 			headers['X-DataBench-Write-Token'] = state.writeToken;
 		}
-		return fetch(API + path, Object.assign({}, options, { headers: headers }))
+		return fetch(url, Object.assign({}, options, { headers: headers }))
 			.then(function (res) {
 				return res.json().then(function (body) {
 					if (!res.ok) {
