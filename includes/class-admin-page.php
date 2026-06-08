@@ -1,8 +1,16 @@
 <?php
+/**
+ * Admin page registration, asset enqueuing, and script localisation.
+ *
+ * @package WP_DataBench
+ */
 defined( 'ABSPATH' ) || exit;
 
 class WP_DataBench_Admin_Page {
 
+	/**
+	 * Registers the DataBench top-level admin menu page on the admin_menu hook.
+	 */
 	public static function register() {
 		add_menu_page(
 			__( 'DataBench', 'wp-databench' ),
@@ -15,6 +23,9 @@ class WP_DataBench_Admin_Page {
 		);
 	}
 
+	/**
+	 * Renders the admin page — enqueues assets, localises the script, and outputs the template.
+	 */
 	public static function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Access denied.', 'wp-databench' ) );

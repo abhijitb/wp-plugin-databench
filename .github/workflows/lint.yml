@@ -1,3 +1,5 @@
+# Runs PHP (PHPCS + WPCS) and JS (ESLint) linters on every push and
+# pull request targeting the main branch.
 name: Lint
 
 on:

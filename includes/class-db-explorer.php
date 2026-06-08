@@ -1,4 +1,9 @@
 <?php
+/**
+ * Database explorer — all $wpdb query logic for browsing and editing tables.
+ *
+ * @package WP_DataBench
+ */
 defined( 'ABSPATH' ) || exit;
 
 class WP_DataBench_DB_Explorer {
@@ -10,7 +15,8 @@ class WP_DataBench_DB_Explorer {
 	/**
 	 * Validates a table name against the live table list.
 	 *
-	 * @return string|WP_Error
+	 * @param string $name Requested table name.
+	 * @return string|WP_Error Validated table name, or a 404 WP_Error if not found.
 	 */
 	private static function validate_table( $name ) {
 		global $wpdb;
@@ -22,12 +28,22 @@ class WP_DataBench_DB_Explorer {
 		return $name;
 	}
 
-	/** Safely backtick-quote a validated identifier. */
+	/**
+	 * Backtick-quotes a validated identifier to safely use it in SQL.
+	 *
+	 * @param string $identifier Column or table name, already validated against a live whitelist.
+	 * @return string Backtick-quoted identifier, e.g. `column_name`.
+	 */
 	private static function qi( $identifier ) {
 		return '`' . str_replace( '`', '``', $identifier ) . '`';
 	}
 
-	/** @return array<array{name:string,type:string,null:bool,key:string,default:string|null,extra:string}> */
+	/**
+	 * Returns column metadata for a table via DESCRIBE.
+	 *
+	 * @param string $table Validated table name.
+	 * @return array<array{name:string,type:string,null:bool,key:string,default:string|null,extra:string}>
+	 */
 	private static function get_columns( $table ) {
 		global $wpdb;
 		$tbl = self::qi( $table );
@@ -48,7 +64,12 @@ class WP_DataBench_DB_Explorer {
 		);
 	}
 
-	/** @return string|null */
+	/**
+	 * Returns the name of the table's primary key column, or null if none exists.
+	 *
+	 * @param string $table Validated table name.
+	 * @return string|null
+	 */
 	private static function get_primary_key( $table ) {
 		global $wpdb;
 		$tbl = self::qi( $table );
@@ -59,6 +80,12 @@ class WP_DataBench_DB_Explorer {
 
 	// ── REST handlers ─────────────────────────────────────────────────────────
 
+	/**
+	 * GET /tables — lists all tables with approximate row counts and storage engine.
+	 *
+	 * @param WP_REST_Request $request Unused.
+	 * @return WP_REST_Response
+	 */
 	public static function get_tables( WP_REST_Request $request ) {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -76,6 +103,12 @@ class WP_DataBench_DB_Explorer {
 		return rest_ensure_response( $result );
 	}
 
+	/**
+	 * GET /tables/{table}/structure — returns column definitions and the primary key name.
+	 *
+	 * @param WP_REST_Request $request Route param: table.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_structure( WP_REST_Request $request ) {
 		$table = self::validate_table( $request->get_param( 'table' ) );
 		if ( is_wp_error( $table ) ) {
@@ -89,6 +122,12 @@ class WP_DataBench_DB_Explorer {
 		);
 	}
 
+	/**
+	 * GET /tables/{table}/rows — returns a paginated, searchable, sortable row set.
+	 *
+	 * @param WP_REST_Request $request Query params: page, search, orderby, order.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_rows( WP_REST_Request $request ) {
 		global $wpdb;
 
@@ -154,6 +193,12 @@ class WP_DataBench_DB_Explorer {
 		);
 	}
 
+	/**
+	 * GET /tables/{table}/rows/{pk} — fetches a single row by primary key value.
+	 *
+	 * @param WP_REST_Request $request Route params: table, pk.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_row( WP_REST_Request $request ) {
 		global $wpdb;
 
@@ -181,6 +226,12 @@ class WP_DataBench_DB_Explorer {
 		return rest_ensure_response( $row );
 	}
 
+	/**
+	 * POST /tables/{table}/rows — inserts a new row from the JSON request body.
+	 *
+	 * @param WP_REST_Request $request JSON body keyed by column name.
+	 * @return WP_REST_Response|WP_Error Response contains insert_id on success.
+	 */
 	public static function insert_row( WP_REST_Request $request ) {
 		global $wpdb;
 
@@ -207,6 +258,12 @@ class WP_DataBench_DB_Explorer {
 		return rest_ensure_response( array( 'insert_id' => $wpdb->insert_id ) );
 	}
 
+	/**
+	 * PUT /tables/{table}/rows/{pk} — updates an existing row; the primary key field is ignored.
+	 *
+	 * @param WP_REST_Request $request JSON body with fields to update. Route params: table, pk.
+	 * @return WP_REST_Response|WP_Error Response contains the number of updated rows.
+	 */
 	public static function update_row( WP_REST_Request $request ) {
 		global $wpdb;
 
@@ -242,6 +299,15 @@ class WP_DataBench_DB_Explorer {
 
 	const QUERY_ROW_CAP = 1000;
 
+	/**
+	 * POST /query — executes a SELECT query and returns rows, columns, timing, and cap status.
+	 *
+	 * Non-SELECT statements are rejected with 403. When the query contains no LIMIT clause,
+	 * one is appended automatically, capping results at QUERY_ROW_CAP rows.
+	 *
+	 * @param WP_REST_Request $request JSON body: { sql: string }.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function execute_query( WP_REST_Request $request ) {
 		global $wpdb;
 
@@ -281,6 +347,12 @@ class WP_DataBench_DB_Explorer {
 		) );
 	}
 
+	/**
+	 * DELETE /tables/{table}/rows/{pk} — deletes the row matching the primary key value.
+	 *
+	 * @param WP_REST_Request $request Route params: table, pk.
+	 * @return WP_REST_Response|WP_Error Response contains { deleted: true } on success.
+	 */
 	public static function delete_row( WP_REST_Request $request ) {
 		global $wpdb;
 

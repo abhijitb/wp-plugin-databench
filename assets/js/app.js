@@ -1,4 +1,13 @@
-/* global wpDataBench */
+/**
+ * WP DataBench — single-page admin app.
+ *
+ * Handles table browsing, CRUD modals, the structure view, SQL Runner, and
+ * CSV export. All REST requests are authenticated via the wp_rest nonce.
+ *
+ * @file
+ * @package wp-databench
+ */
+
 (function () {
 	'use strict';
 
@@ -17,6 +26,14 @@
 	};
 
 	// ── API helper ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Wrapper around fetch() that prepends the REST base URL and injects the nonce header.
+	 *
+	 * @param {string} path    Endpoint path relative to the REST namespace root.
+	 * @param {Object} options Fetch init options merged with the defaults.
+	 * @return {Promise<*>} Resolves with the parsed JSON body, or rejects with an Error.
+	 */
 	function apiFetch(path, options) {
 		options = options || {};
 		return fetch(API + path, Object.assign(
@@ -38,13 +55,28 @@
 	}
 
 	// ── HTML escape ────────────────────────────────────────────────────────────
+
 	var _escDiv = document.createElement('div');
+
+	/**
+	 * HTML-escapes a value for safe insertion into innerHTML.
+	 *
+	 * @param {*} val Value to escape; null/undefined is rendered as an empty string.
+	 * @return {string}
+	 */
 	function esc(val) {
 		_escDiv.textContent = (val == null) ? '' : String(val);
 		return _escDiv.innerHTML;
 	}
 
 	// ── Toast notifications ────────────────────────────────────────────────────
+
+	/**
+	 * Shows a self-dismissing notification at the top-right of the screen.
+	 *
+	 * @param {string} message Text to display.
+	 * @param {string} [type]  'error' (default) or 'success'.
+	 */
 	function toast(message, type) {
 		type = type || 'error';
 		var el = document.createElement('div');
@@ -55,6 +87,10 @@
 	}
 
 	// ── App height ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Sizes the app container to fill the remaining viewport height below its top edge.
+	 */
 	function setAppHeight() {
 		var app = document.getElementById('databench-app');
 		if (!app) return;
@@ -63,6 +99,10 @@
 	}
 
 	// ── Init ───────────────────────────────────────────────────────────────────
+
+	/**
+	 * Bootstraps the app — sets height, loads tables, and wires global event listeners.
+	 */
 	function init() {
 		setAppHeight();
 		window.addEventListener('resize', setAppHeight);
@@ -80,6 +120,10 @@
 	}
 
 	// ── Sidebar ────────────────────────────────────────────────────────────────
+
+	/**
+	 * Fetches the table list from the API and re-renders the sidebar.
+	 */
 	function loadTables() {
 		var listEl = document.getElementById('databench-tables');
 		listEl.innerHTML = '<li class="databench-loading">Loading…</li>';
@@ -90,6 +134,11 @@
 			});
 	}
 
+	/**
+	 * Renders the table list into the sidebar.
+	 *
+	 * @param {Array<{name: string, rows: number}>} tables
+	 */
 	function renderSidebar(tables) {
 		var listEl = document.getElementById('databench-tables');
 		if (!tables.length) {
@@ -109,6 +158,12 @@
 	}
 
 	// ── Open table ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Resets browsing state and loads the structure + first page of rows for a table.
+	 *
+	 * @param {string} name Table name.
+	 */
 	function openTable(name) {
 		state.currentTable  = name;
 		state.currentView   = 'browse';
@@ -134,6 +189,13 @@
 	}
 
 	// ── Tabs ───────────────────────────────────────────────────────────────────
+
+	/**
+	 * Returns the HTML string for the Browse / Structure tab switcher.
+	 *
+	 * @param {string} active Currently active tab: 'browse' or 'structure'.
+	 * @return {string} HTML markup.
+	 */
 	function renderTabs(active) {
 		return '<div class="databench-tab-group">' +
 			'<button class="databench-tab' + (active === 'browse' ? ' active' : '') + '" data-view="browse">Browse</button>' +
@@ -141,6 +203,9 @@
 			'</div>';
 	}
 
+	/**
+	 * Attaches click handlers to the rendered tab buttons.
+	 */
 	function wireTabEvents() {
 		document.querySelectorAll('.databench-tab[data-view]').forEach(function (btn) {
 			btn.addEventListener('click', function () {
@@ -153,6 +218,12 @@
 	}
 
 	// ── Load rows ──────────────────────────────────────────────────────────────
+
+	/**
+	 * Fetches the current page of rows (with active search/sort) and renders the grid.
+	 *
+	 * @return {Promise<void>}
+	 */
 	function loadRows() {
 		var params = new URLSearchParams({
 			page:    state.currentPage,
@@ -166,6 +237,12 @@
 	}
 
 	// ── Grid ───────────────────────────────────────────────────────────────────
+
+	/**
+	 * Renders the data grid, toolbar, search input, and pagination into the main panel.
+	 *
+	 * @param {{rows: Array, total: number, page: number, per_page: number}} data
+	 */
 	function renderGrid(data) {
 		var rows       = data.rows;
 		var total      = data.total;
@@ -261,6 +338,10 @@
 	}
 
 	// ── Structure view ─────────────────────────────────────────────────────────
+
+	/**
+	 * Renders the structure view (column detail table) into the main panel.
+	 */
 	function renderStructure() {
 		var cols = state.schema.columns;
 
@@ -302,6 +383,10 @@
 	}
 
 	// ── SQL Runner ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Switches the main panel to the SQL Runner view and focuses the textarea.
+	 */
 	function openSQLRunner() {
 		state.currentTable = null;
 		document.querySelectorAll('#databench-tables li').forEach(function (li) {
@@ -334,6 +419,9 @@
 		textarea.focus();
 	}
 
+	/**
+	 * Reads the SQL textarea value and POSTs it to the /query endpoint.
+	 */
 	function runQuery() {
 		var sql = document.getElementById('sql-input').value.trim();
 		if (!sql) return;
@@ -354,6 +442,11 @@
 			});
 	}
 
+	/**
+	 * Renders the query result grid with a meta bar (row count, timing) and CSV export button.
+	 *
+	 * @param {{rows: Array, columns: string[], count: number, time_ms: number, capped: boolean}} data
+	 */
 	function renderQueryResults(data) {
 		var resultsEl = document.getElementById('sql-results');
 		var meta = Number(data.count).toLocaleString() + ' row' + (data.count !== 1 ? 's' : '') + ' · ' + data.time_ms + 'ms' +
@@ -390,7 +483,19 @@
 		});
 	}
 
+	/**
+	 * Builds an RFC-4180 CSV from the given columns and rows and triggers a browser download.
+	 *
+	 * @param {string[]}               columns Column names used as the header row.
+	 * @param {Array<Object<string,*>>} rows    Row objects keyed by column name.
+	 */
 	function exportCSV(columns, rows) {
+		/**
+		 * Wraps a cell value in quotes if it contains commas, quotes, or newlines.
+		 *
+		 * @param {*} val
+		 * @return {string}
+		 */
 		function csvCell(val) {
 			var str = (val == null) ? '' : String(val);
 			if (str.search(/[",\r\n]/) !== -1) {
@@ -416,12 +521,23 @@
 		URL.revokeObjectURL(url);
 	}
 
+	/**
+	 * Toggles the active state on the SQL Runner header button.
+	 *
+	 * @param {boolean} active
+	 */
 	function setSQLBtnActive(active) {
 		var btn = document.getElementById('databench-sql-btn');
 		if (btn) btn.classList.toggle('active', active);
 	}
 
 	// ── Modal ──────────────────────────────────────────────────────────────────
+
+	/**
+	 * Opens the row edit/insert modal. Fetches the existing row from the API when editing.
+	 *
+	 * @param {string|null} pkValue Primary key value of the row to edit, or null to insert a new row.
+	 */
 	function openModal(pkValue) {
 		var isNew = pkValue === null;
 		if (!isNew) {
@@ -433,6 +549,12 @@
 		}
 	}
 
+	/**
+	 * Renders and attaches the edit/insert modal overlay to the document body.
+	 *
+	 * @param {Object|null} row   Existing row data for pre-filling fields; null when inserting.
+	 * @param {boolean}     isNew True for insert, false for update.
+	 */
 	function showModal(row, isNew) {
 		var cols = state.schema.columns;
 		var pk   = state.schema.primary_key;
@@ -500,6 +622,12 @@
 	}
 
 	// ── Delete ─────────────────────────────────────────────────────────────────
+
+	/**
+	 * Prompts for confirmation then sends a DELETE request for the given primary key.
+	 *
+	 * @param {string} pkValue Primary key value of the row to delete.
+	 */
 	function deleteRow(pkValue) {
 		var pk = state.schema.primary_key;
 		if (!confirm('Delete row where ' + pk + ' = ' + pkValue + '?\n\nThis cannot be undone.')) return;

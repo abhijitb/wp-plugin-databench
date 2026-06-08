@@ -1,10 +1,18 @@
 <?php
+/**
+ * REST API route registration under the wp-databench/v1 namespace.
+ *
+ * @package WP_DataBench
+ */
 defined( 'ABSPATH' ) || exit;
 
 class WP_DataBench_REST_API {
 
 	const NS = 'wp-databench/v1';
 
+	/**
+	 * Registers all wp-databench/v1 REST routes on the rest_api_init hook.
+	 */
 	public static function register_routes() {
 		$perm = array( 'WP_DataBench_Access_Guard', 'permission_callback' );
 

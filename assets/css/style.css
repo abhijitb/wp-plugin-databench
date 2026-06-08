@@ -1,3 +1,9 @@
+/**
+ * WP DataBench admin stylesheet.
+ *
+ * @package wp-databench
+ */
+
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 .databench-app {
     display: flex;

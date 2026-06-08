@@ -7,6 +7,8 @@
  * Requires PHP: 7.4
  * License:     GPL-2.0+
  * Text Domain: wp-databench
+ *
+ * @package WP_DataBench
  */
 
 defined( 'ABSPATH' ) || exit;

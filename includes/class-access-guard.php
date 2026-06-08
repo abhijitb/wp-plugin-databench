@@ -1,4 +1,9 @@
 <?php
+/**
+ * Access guard — shared REST permission callback.
+ *
+ * @package WP_DataBench
+ */
 defined( 'ABSPATH' ) || exit;
 
 class WP_DataBench_Access_Guard {

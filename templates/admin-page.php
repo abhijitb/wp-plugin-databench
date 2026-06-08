@@ -1,4 +1,11 @@
-<?php defined( 'ABSPATH' ) || exit; ?>
+<?php
+/**
+ * Admin page template — SPA mount point rendered by WP_DataBench_Admin_Page.
+ *
+ * @package WP_DataBench
+ */
+defined( 'ABSPATH' ) || exit;
+?>
 <div id="databench-app" class="databench-app">
 	<div class="databench-header">
 		<div class="databench-header-logo">

@@ -1,3 +1,5 @@
+# Builds a distributable plugin zip and attaches it to a GitHub Release
+# whenever a v*.*.* tag is pushed.
 name: Release
 
 on:
