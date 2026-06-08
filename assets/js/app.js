@@ -7,7 +7,7 @@
  * @file
  * @package wp-databench
  */
-/* global wpDataBench */
+
 (function () {
 	'use strict';
 
