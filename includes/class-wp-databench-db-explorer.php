@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
  *
  * @internal
  */
-
 class WP_DataBench_DB_Explorer {
 
 	const PER_PAGE = 25;
@@ -93,7 +92,7 @@ class WP_DataBench_DB_Explorer {
 	 * @param WP_REST_Request $request Unused.
 	 * @return WP_REST_Response
 	 */
-	public static function get_tables( WP_REST_Request $request ) {
+	public static function get_tables( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$tables = $wpdb->get_results( 'SHOW TABLE STATUS', ARRAY_A );
@@ -173,10 +172,10 @@ class WP_DataBench_DB_Explorer {
 			}
 			$where_sql = ' WHERE ' . implode( ' OR ', $where_parts );
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			$count_query = $wpdb->prepare( "SELECT COUNT(*) FROM {$tbl}{$where_sql}", ...$like_args );
 			$rows_args   = array_merge( $like_args, array( $per_page, $offset ) );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 			$rows_query = $wpdb->prepare( "SELECT * FROM {$tbl}{$where_sql}{$orderby_sql} LIMIT %d OFFSET %d", ...$rows_args );
 		} else {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -294,7 +293,7 @@ class WP_DataBench_DB_Explorer {
 			return new WP_Error( 'empty_data', 'No valid fields to update.', array( 'status' => 400 ) );
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->update( $table, $data, array( $pk => $pk_val ) );
 
 		if ( false === $result ) {
@@ -343,15 +342,17 @@ class WP_DataBench_DB_Explorer {
 		}
 
 		$count  = count( $rows ?? array() );
-		$capped = ! preg_match( '/\bLIMIT\b/i', $request->get_param( 'sql' ) ) && $count === self::QUERY_ROW_CAP;
+		$capped = ! preg_match( '/\bLIMIT\b/i', $request->get_param( 'sql' ) ) && self::QUERY_ROW_CAP === $count;
 
-		return rest_ensure_response( array(
-			'rows'    => $rows ?? array(),
-			'columns' => ! empty( $rows ) ? array_keys( $rows[0] ) : array(),
-			'count'   => $count,
-			'time_ms' => $ms,
-			'capped'  => $capped,
-		) );
+		return rest_ensure_response(
+			array(
+				'rows'    => $rows ?? array(),
+				'columns' => ! empty( $rows ) ? array_keys( $rows[0] ) : array(),
+				'count'   => $count,
+				'time_ms' => $ms,
+				'capped'  => $capped,
+			)
+		);
 	}
 
 	/**
@@ -375,7 +376,7 @@ class WP_DataBench_DB_Explorer {
 
 		$pk_val = $request->get_param( 'pk' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete( $table, array( $pk => $pk_val ) );
 
 		if ( false === $result ) {

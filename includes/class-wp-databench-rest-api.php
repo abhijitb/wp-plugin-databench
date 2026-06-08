@@ -10,7 +10,6 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Registers REST API routes for WP DataBench.
  */
-
 class WP_DataBench_REST_API {
 
 	const NS = 'wp-databench/v1';

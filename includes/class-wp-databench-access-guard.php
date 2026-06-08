@@ -10,7 +10,6 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Access guard.
  */
-
 class WP_DataBench_Access_Guard {
 
 	/**
