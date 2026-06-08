@@ -4,6 +4,7 @@
  *
  * @package WP_DataBench
  */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -20,9 +21,9 @@ class WP_DataBench_Settings {
 	 * Registers plugin settings with the WordPress Settings API.
 	 */
 	public static function register_settings() {
-		register_setting( 'wp_databench', self::OPT_ENABLED,  array( 'sanitize_callback' => array( __CLASS__, 'sanitize_bool' ) ) );
+		register_setting( 'wp_databench', self::OPT_ENABLED, array( 'sanitize_callback' => array( __CLASS__, 'sanitize_bool' ) ) );
 		register_setting( 'wp_databench', self::OPT_READONLY, array( 'sanitize_callback' => array( __CLASS__, 'sanitize_bool' ) ) );
-		register_setting( 'wp_databench', self::OPT_IP_LIST,  array( 'sanitize_callback' => 'sanitize_textarea_field' ) );
+		register_setting( 'wp_databench', self::OPT_IP_LIST, array( 'sanitize_callback' => 'sanitize_textarea_field' ) );
 		register_setting( 'wp_databench', self::OPT_PASSWORD, array( 'sanitize_callback' => array( __CLASS__, 'sanitize_password' ) ) );
 	}
 
@@ -84,7 +85,7 @@ class WP_DataBench_Settings {
 	/**
 	 * Sanitize callback — coerces any truthy value to '1', falsy to '0'.
 	 *
-	 * @param mixed $value
+	 * @param mixed $value Any value.
 	 * @return string '1' or '0'.
 	 */
 	public static function sanitize_bool( $value ) {

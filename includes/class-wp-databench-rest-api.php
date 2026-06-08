@@ -4,6 +4,7 @@
  *
  * @package WP_DataBench
  */
+
 defined( 'ABSPATH' ) || exit;
 
 /**

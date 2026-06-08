@@ -4,6 +4,7 @@
  *
  * @package WP_DataBench
  */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -50,7 +51,7 @@ class WP_DataBench_Access_Guard {
 	 *
 	 * Extends permission_callback with read-only mode and write-lock token checks.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return true|WP_Error
 	 */
 	public static function write_permission_callback( WP_REST_Request $request ) {
@@ -88,7 +89,7 @@ class WP_DataBench_Access_Guard {
 			return new WP_Error( 'not_locked', 'No write password is configured.', array( 'status' => 400 ) );
 		}
 
-		$password = (string) ( $request->get_param( 'password' ) ?: '' );
+		$password = (string) ( $request->get_param( 'password' ) ?? '' );
 
 		if ( ! WP_DataBench_Settings::verify_password( $password ) ) {
 			return new WP_Error( 'wrong_password', 'Incorrect password.', array( 'status' => 403 ) );
