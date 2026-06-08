@@ -4,7 +4,14 @@
  *
  * @package WP_DataBench
  */
+
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * Database explorer.
+ *
+ * @internal
+ */
 
 class WP_DataBench_DB_Explorer {
 
@@ -54,13 +61,13 @@ class WP_DataBench_DB_Explorer {
 				return array(
 					'name'    => $col['Field'],
 					'type'    => $col['Type'],
-					'null'    => $col['Null'] === 'YES',
+					'null'    => 'YES' === $col['Null'],
 					'key'     => $col['Key'],
 					'default' => $col['Default'],
 					'extra'   => $col['Extra'],
 				);
 			},
-			$cols ?: array()
+			$cols ?? array()
 		);
 	}
 
@@ -98,7 +105,7 @@ class WP_DataBench_DB_Explorer {
 					'engine' => $t['Engine'],
 				);
 			},
-			$tables ?: array()
+			$tables ?? array()
 		);
 		return rest_ensure_response( $result );
 	}
@@ -136,17 +143,17 @@ class WP_DataBench_DB_Explorer {
 			return $table;
 		}
 
-		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
-		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?: '' ) );
-		$orderby  = (string) ( $request->get_param( 'orderby' ) ?: '' );
-		$order    = strtoupper( (string) ( $request->get_param( 'order' ) ?: '' ) ) === 'DESC' ? 'DESC' : 'ASC';
+		$page     = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$search   = sanitize_text_field( (string) ( $request->get_param( 'search' ) ?? '' ) );
+		$orderby  = (string) ( $request->get_param( 'orderby' ) ?? '' );
+		$order    = 'DESC' === strtoupper( (string) ( $request->get_param( 'order' ) ?? '' ) ) ? 'DESC' : 'ASC';
 		$per_page = self::PER_PAGE;
 		$offset   = ( $page - 1 ) * $per_page;
 		$tbl      = self::qi( $table );
 
 		// Validate ORDER BY column.
 		$orderby_sql = '';
-		if ( $orderby !== '' ) {
+		if ( '' !== $orderby ) {
 			$valid_cols = array_column( self::get_columns( $table ), 'name' );
 			if ( ! in_array( $orderby, $valid_cols, true ) ) {
 				return new WP_Error( 'invalid_column', 'Invalid column.', array( 'status' => 400 ) );
@@ -155,7 +162,7 @@ class WP_DataBench_DB_Explorer {
 		}
 
 		// Build WHERE clause for full-text search across all columns.
-		if ( $search !== '' ) {
+		if ( '' !== $search ) {
 			$cols        = self::get_columns( $table );
 			$like        = '%' . $wpdb->esc_like( $search ) . '%';
 			$where_parts = array();
@@ -185,7 +192,7 @@ class WP_DataBench_DB_Explorer {
 
 		return rest_ensure_response(
 			array(
-				'rows'     => $rows ?: array(),
+				'rows'     => $rows ?? array(),
 				'total'    => $total,
 				'page'     => $page,
 				'per_page' => $per_page,
@@ -240,7 +247,7 @@ class WP_DataBench_DB_Explorer {
 			return $table;
 		}
 
-		$body       = $request->get_json_params() ?: array();
+		$body       = $request->get_json_params() ?? array();
 		$valid_cols = array_column( self::get_columns( $table ), 'name' );
 		$data       = array_intersect_key( $body, array_flip( $valid_cols ) );
 
@@ -278,7 +285,7 @@ class WP_DataBench_DB_Explorer {
 		}
 
 		$pk_val     = $request->get_param( 'pk' );
-		$body       = $request->get_json_params() ?: array();
+		$body       = $request->get_json_params() ?? array();
 		$valid_cols = array_column( self::get_columns( $table ), 'name' );
 		$data       = array_intersect_key( $body, array_flip( $valid_cols ) );
 		unset( $data[ $pk ] ); // Never update the primary key.
@@ -311,7 +318,7 @@ class WP_DataBench_DB_Explorer {
 	public static function execute_query( WP_REST_Request $request ) {
 		global $wpdb;
 
-		$sql = trim( (string) ( $request->get_param( 'sql' ) ?: '' ) );
+		$sql = trim( (string) ( $request->get_param( 'sql' ) ?? '' ) );
 
 		if ( '' === $sql ) {
 			return new WP_Error( 'empty_query', 'No SQL provided.', array( 'status' => 400 ) );
@@ -328,18 +335,18 @@ class WP_DataBench_DB_Explorer {
 
 		$start = microtime( true );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$rows  = $wpdb->get_results( $sql, ARRAY_A );
-		$ms    = (int) round( ( microtime( true ) - $start ) * 1000 );
+		$rows = $wpdb->get_results( $sql, ARRAY_A );
+		$ms   = (int) round( ( microtime( true ) - $start ) * 1000 );
 
 		if ( $wpdb->last_error ) {
 			return new WP_Error( 'query_error', $wpdb->last_error, array( 'status' => 400 ) );
 		}
 
-		$count    = count( $rows ?: array() );
-		$capped   = ! preg_match( '/\bLIMIT\b/i', $request->get_param( 'sql' ) ) && $count === self::QUERY_ROW_CAP;
+		$count  = count( $rows ?? array() );
+		$capped = ! preg_match( '/\bLIMIT\b/i', $request->get_param( 'sql' ) ) && $count === self::QUERY_ROW_CAP;
 
 		return rest_ensure_response( array(
-			'rows'    => $rows ?: array(),
+			'rows'    => $rows ?? array(),
 			'columns' => ! empty( $rows ) ? array_keys( $rows[0] ) : array(),
 			'count'   => $count,
 			'time_ms' => $ms,

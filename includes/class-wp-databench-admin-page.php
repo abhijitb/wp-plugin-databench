@@ -4,7 +4,12 @@
  *
  * @package WP_DataBench
  */
+
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * Registers the DataBench admin page.
+ */
 
 class WP_DataBench_Admin_Page {
 
