@@ -560,13 +560,17 @@
 		var pk   = state.schema.primary_key;
 
 		var fields = cols.map(function (col) {
-			var val         = row ? esc(row[col.name]) : '';
+			var val         = row ? (null !== row[col.name] ? row[col.name] : '') : '';
 			var readonly    = (!isNew && col.name === pk) ? ' readonly' : '';
 			var placeholder = col.null ? ' placeholder="NULL"' : '';
+			var isLongText  = /text|blob/i.test(col.type);
+			var input       = isLongText
+				? '<textarea name="' + esc(col.name) + '" rows="6"' + readonly + placeholder + '>' + esc(val) + '</textarea>'
+				: '<input type="text" name="' + esc(col.name) + '" value="' + esc(val) + '"' + readonly + placeholder + '>';
 			return '<div class="form-row">' +
 				'<label>' + esc(col.name) +
 				'<span class="col-type">' + esc(col.type) + '</span></label>' +
-				'<input type="text" name="' + esc(col.name) + '" value="' + val + '"' + readonly + placeholder + '>' +
+				input +
 				'</div>';
 		}).join('');
 

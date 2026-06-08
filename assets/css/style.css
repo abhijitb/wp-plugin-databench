@@ -443,22 +443,32 @@
     letter-spacing: 0;
 }
 
-.form-row input[type="text"] {
+.form-row input[type="text"],
+.form-row textarea {
     width: 100%;
     padding: 7px 10px;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
     font-size: 13px;
     box-sizing: border-box;
+    font-family: inherit;
 }
 
-.form-row input[type="text"]:focus {
+.form-row textarea {
+    resize: vertical;
+    line-height: 1.5;
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+.form-row input[type="text"]:focus,
+.form-row textarea:focus {
     outline: none;
     border-color: #2271b1;
     box-shadow: 0 0 0 1px #2271b1;
 }
 
-.form-row input[readonly] {
+.form-row input[readonly],
+.form-row textarea[readonly] {
     background: #f6f7f7;
     color: #8c8f94;
     cursor: not-allowed;
