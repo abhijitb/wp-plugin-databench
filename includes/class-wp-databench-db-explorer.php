@@ -87,7 +87,11 @@ class WP_DataBench_DB_Explorer {
 	// ── REST handlers ─────────────────────────────────────────────────────────
 
 	/**
-	 * GET /tables — lists all tables with approximate row counts and storage engine.
+	 * GET /tables — lists all tables with exact row counts and storage engine.
+	 *
+	 * Uses SELECT COUNT(*) per table instead of SHOW TABLE STATUS because InnoDB
+	 * only stores approximate row counts in its statistics (which can persist after
+	 * TRUNCATE or rapid deletes until ANALYZE TABLE is run).
 	 *
 	 * @param WP_REST_Request $request Unused.
 	 * @return WP_REST_Response
@@ -97,10 +101,13 @@ class WP_DataBench_DB_Explorer {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$tables = $wpdb->get_results( 'SHOW TABLE STATUS', ARRAY_A );
 		$result = array_map(
-			static function ( $t ) {
+			static function ( $t ) use ( $wpdb ) {
+				$tbl = '`' . str_replace( '`', '``', $t['Name'] ) . '`';
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$exact_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$tbl}" );
 				return array(
 					'name'   => $t['Name'],
-					'rows'   => (int) $t['Rows'],
+					'rows'   => $exact_count,
 					'engine' => $t['Engine'],
 				);
 			},
