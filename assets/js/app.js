@@ -85,6 +85,179 @@
 		return _escDiv.innerHTML;
 	}
 
+	// ── PHP serialized data ──────────────────────────────────────────────────────
+
+	/**
+	 * Best-effort check for a PHP serialize() string (the kind WordPress stores
+	 * in option/meta blobs). Mirrors WP's is_serialized() closely enough for a
+	 * display toggle — false positives only cost a decode attempt that can fail
+	 * gracefully.
+	 *
+	 * @param {*} val Value to test.
+	 * @return {boolean}
+	 */
+	function isSerialized(val) {
+		if (typeof val !== 'string') return false;
+		var s = val.trim();
+		if (s === 'N;') return true;
+		if (s.length < 4 || s.charAt(1) !== ':') return false;
+		switch (s.charAt(0)) {
+			case 's':
+			case 'a':
+			case 'O':
+			case 'b':
+			case 'i':
+			case 'd':
+				return /^[saO]:\d+:/.test(s) || /^[bid]:[^;]*;/.test(s);
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Parses a PHP serialize() string into a plain JS value. Operates on UTF-8
+	 * bytes because serialized string lengths are byte counts, and object/array
+	 * members may contain multibyte or NUL-delimited (protected/private) keys.
+	 * Throws on malformed input so callers can fall back to the raw view.
+	 *
+	 * @param {string} str Serialized input.
+	 * @return {*} Decoded value; objects become { __class, __props }.
+	 */
+	function phpUnserialize(str) {
+		var bytes = new TextEncoder().encode(str);
+		var decoder = new TextDecoder();
+		var pos = 0;
+
+		function expect(ch) {
+			if (String.fromCharCode(bytes[pos]) !== ch) {
+				throw new Error('Expected "' + ch + '" at byte ' + pos);
+			}
+			pos++;
+		}
+
+		function readUntil(ch) {
+			var start = pos;
+			while (pos < bytes.length && String.fromCharCode(bytes[pos]) !== ch) pos++;
+			var out = decoder.decode(bytes.slice(start, pos));
+			expect(ch);
+			return out;
+		}
+
+		function readString() {
+			var len = parseInt(readUntil(':'), 10);
+			expect('"');
+			var out = decoder.decode(bytes.slice(pos, pos + len));
+			pos += len;
+			expect('"');
+			return out;
+		}
+
+		function parseValue() {
+			var type = String.fromCharCode(bytes[pos]);
+			pos++;
+			switch (type) {
+				case 'N':
+					expect(';');
+					return null;
+				case 'b':
+					expect(':');
+					var b = readUntil(';');
+					return b === '1';
+				case 'i':
+					expect(':');
+					return parseInt(readUntil(';'), 10);
+				case 'd':
+					expect(':');
+					return parseFloat(readUntil(';'));
+				case 's':
+					expect(':');
+					var sv = readString();
+					expect(';');
+					return sv;
+				case 'a':
+					expect(':');
+					var count = parseInt(readUntil(':'), 10);
+					expect('{');
+					var arr = {};
+					for (var i = 0; i < count; i++) {
+						var key = parseValue();
+						arr[key] = parseValue();
+					}
+					expect('}');
+					return arr;
+				case 'O':
+					expect(':');
+					var cls = readString();
+					expect(':');
+					var pc = parseInt(readUntil(':'), 10);
+					expect('{');
+					var props = {};
+					for (var j = 0; j < pc; j++) {
+						props[cleanPropName(parseValue())] = parseValue();
+					}
+					expect('}');
+					return { __class: cls, __props: props };
+				default:
+					throw new Error('Unknown type "' + type + '" at byte ' + (pos - 1));
+			}
+		}
+
+		var result = parseValue();
+		return result;
+	}
+
+	/**
+	 * Strips PHP's NUL-delimited visibility prefix from a serialized property
+	 * name. "\0*\0foo" → "*foo" (protected); "\0Class\0foo" → "foo" (private).
+	 *
+	 * @param {string} name Raw property name.
+	 * @return {string}
+	 */
+	function cleanPropName(name) {
+		if (typeof name !== 'string' || name.charAt(0) !== '\u0000') return name;
+		var parts = name.split('\u0000');
+		// parts: ['', '*' or ClassName, actualName]
+		return parts[1] === '*' ? '*' + parts[2] : parts[2];
+	}
+
+	/**
+	 * Renders a decoded value as indented, human-readable text.
+	 *
+	 * @param {*}      value  Decoded value from phpUnserialize().
+	 * @param {number} [depth] Current indent depth (internal).
+	 * @return {string}
+	 */
+	function prettyPrint(value, depth) {
+		depth = depth || 0;
+		var pad = '  '.repeat(depth);
+		var padIn = '  '.repeat(depth + 1);
+
+		if (value === null) return 'null';
+		if (typeof value === 'boolean') return value ? 'true' : 'false';
+		if (typeof value === 'number') return String(value);
+		if (typeof value === 'string') return JSON.stringify(value);
+
+		if (value && value.__class) {
+			var oKeys = Object.keys(value.__props);
+			if (!oKeys.length) return value.__class + ' {}';
+			var oBody = oKeys.map(function (k) {
+				return padIn + k + ': ' + prettyPrint(value.__props[k], depth + 1);
+			}).join('\n');
+			return value.__class + ' {\n' + oBody + '\n' + pad + '}';
+		}
+
+		if (value && typeof value === 'object') {
+			var keys = Object.keys(value);
+			if (!keys.length) return '[]';
+			var body = keys.map(function (k) {
+				return padIn + k + ' => ' + prettyPrint(value[k], depth + 1);
+			}).join('\n');
+			return '[\n' + body + '\n' + pad + ']';
+		}
+
+		return String(value);
+	}
+
 	// ── Toast notifications ────────────────────────────────────────────────────
 
 	/**
@@ -695,12 +868,33 @@
 			// full content is visible regardless of the current value.
 			var multiline   = /text|blob|json/i.test(col.type);
 			var control     = multiline
-				? '<textarea name="' + esc(col.name) + '" rows="4"' + readonly + placeholder + '>' + val + '</textarea>'
+				? '<textarea class="field-raw" name="' + esc(col.name) + '" rows="4"' + readonly + placeholder + '>' + val + '</textarea>'
 				: '<input type="text" name="' + esc(col.name) + '" value="' + val + '"' + readonly + placeholder + '>';
+
+			// For serialized blobs, offer a read-only decoded view alongside the
+			// editable raw textarea, switched by a small toggle above the field.
+			var toggle = '';
+			var decoded = '';
+			if (isSerialized(rawVal)) {
+				var pretty;
+				try {
+					pretty = prettyPrint(phpUnserialize(String(rawVal)));
+				} catch (err) {
+					pretty = '/* Could not decode: ' + err.message + ' */';
+				}
+				toggle =
+					'<label class="serial-toggle">' +
+					'<input type="checkbox" class="serial-toggle-cb"> Decode</label>';
+				decoded =
+					'<textarea class="field-decoded" rows="6" readonly hidden>' + esc(pretty) + '</textarea>';
+			}
+
 			return '<div class="form-row">' +
 				'<label>' + esc(col.name) +
 				'<span class="col-type">' + esc(col.type) + '</span></label>' +
+				toggle +
 				control +
+				decoded +
 				'</div>';
 		}).join('');
 
@@ -723,6 +917,18 @@
 		overlay.querySelector('.modal-close').addEventListener('click', function () { overlay.remove(); });
 		overlay.querySelector('.btn-cancel').addEventListener('click', function () { overlay.remove(); });
 		overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+		// Decode toggles: swap the editable raw textarea for the read-only
+		// decoded view within the same form row.
+		overlay.querySelectorAll('.serial-toggle-cb').forEach(function (cb) {
+			cb.addEventListener('change', function () {
+				var formRow = cb.closest('.form-row');
+				var raw     = formRow.querySelector('.field-raw');
+				var decoded = formRow.querySelector('.field-decoded');
+				raw.hidden     = cb.checked;
+				decoded.hidden = !cb.checked;
+			});
+		});
 
 		overlay.querySelector('form').addEventListener('submit', function (e) {
 			e.preventDefault();
