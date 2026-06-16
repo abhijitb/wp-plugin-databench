@@ -687,13 +687,20 @@
 		var pk   = state.schema.primary_key;
 
 		var fields = cols.map(function (col) {
-			var val         = row ? esc(row[col.name]) : '';
+			var rawVal      = row ? row[col.name] : null;
+			var val         = esc(rawVal);
 			var readonly    = (!isNew && col.name === pk) ? ' readonly' : '';
 			var placeholder = col.null ? ' placeholder="NULL"' : '';
+			// Use a multi-line textarea for long types (TEXT/BLOB/JSON) so the
+			// full content is visible regardless of the current value.
+			var multiline   = /text|blob|json/i.test(col.type);
+			var control     = multiline
+				? '<textarea name="' + esc(col.name) + '" rows="4"' + readonly + placeholder + '>' + val + '</textarea>'
+				: '<input type="text" name="' + esc(col.name) + '" value="' + val + '"' + readonly + placeholder + '>';
 			return '<div class="form-row">' +
 				'<label>' + esc(col.name) +
 				'<span class="col-type">' + esc(col.type) + '</span></label>' +
-				'<input type="text" name="' + esc(col.name) + '" value="' + val + '"' + readonly + placeholder + '>' +
+				control +
 				'</div>';
 		}).join('');
 
