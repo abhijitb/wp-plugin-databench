@@ -10,8 +10,5 @@
     <arg name="colors"/>
     <arg value="sp"/>
 
-    <rule ref="WordPress">
-        <!-- Plugin doesn't use i18n text domain enforcement yet -->
-        <exclude name="WordPress.WP.I18n"/>
-    </rule>
+    <rule ref="WordPress"/>
 </ruleset>

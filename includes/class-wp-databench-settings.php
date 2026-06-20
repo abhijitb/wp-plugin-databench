@@ -28,6 +28,35 @@ class WP_DataBench_Settings {
 	}
 
 	/**
+	 * Loads the plugin text domain for translation.
+	 *
+	 * Hooked on `init`. Translation files live in the /languages directory.
+	 */
+	public static function load_textdomain() {
+		load_plugin_textdomain(
+			'wp-databench',
+			false,
+			dirname( plugin_basename( WP_DATABENCH_FILE ) ) . '/languages'
+		);
+	}
+
+	/**
+	 * Activation callback — verifies the PHP version and seeds default options.
+	 *
+	 * Defaults are written with add_option(), which is non-destructive, so
+	 * re-activation never overrides existing user settings.
+	 */
+	public static function activate() {
+		if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
+			deactivate_plugins( plugin_basename( WP_DATABENCH_FILE ) );
+			wp_die( esc_html__( 'WP DataBench requires PHP 7.4 or higher.', 'wp-databench' ) );
+		}
+
+		add_option( self::OPT_ENABLED, '1' );
+		add_option( self::OPT_READONLY, '0' );
+	}
+
+	/**
 	 * Returns whether the plugin is enabled. Defaults to true.
 	 *
 	 * @return bool

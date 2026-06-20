@@ -24,8 +24,8 @@ jobs:
       - name: Build plugin zip
         run: |
           mkdir -p dist/wp-plugin-databench
-          cp wp-databench.php uninstall.php README.md dist/wp-plugin-databench/
-          cp -r includes assets templates dist/wp-plugin-databench/
+          cp wp-databench.php uninstall.php readme.txt README.md dist/wp-plugin-databench/
+          cp -r includes assets templates languages dist/wp-plugin-databench/
           cd dist
           zip -r "../wp-plugin-databench-${{ steps.tag.outputs.name }}.zip" wp-plugin-databench/
 
