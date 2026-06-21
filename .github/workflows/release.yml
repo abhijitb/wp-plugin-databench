@@ -19,18 +19,20 @@ jobs:
 
       - name: Get tag name
         id: tag
-        run: echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Build plugin zip
         run: |
-          mkdir -p dist/wp-plugin-databench
-          cp wp-databench.php uninstall.php readme.txt README.md dist/wp-plugin-databench/
-          cp -r includes assets templates languages dist/wp-plugin-databench/
+          mkdir -p dist/wp-databench
+          cp wp-databench.php uninstall.php readme.txt README.md dist/wp-databench/
+          cp -r includes assets templates languages dist/wp-databench/
           cd dist
-          zip -r "../wp-plugin-databench-${{ steps.tag.outputs.name }}.zip" wp-plugin-databench/
+          zip -r "../wp-databench.${{ steps.tag.outputs.version }}.zip" wp-databench/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: wp-plugin-databench-${{ steps.tag.outputs.name }}.zip
+          files: wp-databench.${{ steps.tag.outputs.version }}.zip
           generate_release_notes: true

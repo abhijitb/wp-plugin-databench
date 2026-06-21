@@ -66,8 +66,9 @@ plumbing.
 
 - Commit all changes on `main`.
 - Tag `v1.0.0` and push: `git tag v1.0.0 && git push origin v1.0.0`.
-- The `release.yml` workflow builds `wp-plugin-databench-v1.0.0.zip` and
-  attaches it to a GitHub Release.
+- The `release.yml` workflow builds `wp-databench.1.0.0.zip` (internal folder
+  `wp-databench/`, matching the plugin slug; the `v` is stripped from the
+  artifact name) and attaches it to a GitHub Release.
 - **Self-hosted:** download the zip → Plugins → Add New → Upload.
 - **WordPress.org:** request a slug at
   `https://wordpress.org/plugins/developers/add/`, then publish via SVN or the
